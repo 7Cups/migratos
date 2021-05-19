@@ -1,0 +1,26 @@
+{
+    "name": "delirehberi/migratos",
+    "description": "Basic database migration library",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Emre YILMAZ",
+            "email": "emreyilmaz@yandex.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload":{
+        "psr-4": {
+            "SevenCupsMigratos\\":"src"
+        }
+    },
+    "autoload-dev":{
+        "psr-4": {
+            "SevenCupsMigratos\\Test\\":"tests"
+        }
+    },
+    "require": {
+        "symfony/console":"^5.0"
+    }
+}
