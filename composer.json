@@ -1,5 +1,5 @@
 {
-    "name": "delirehberi/migratos",
+    "name": "7cups/migratos",
     "description": "Basic database migration library",
     "type": "library",
     "license": "MIT",

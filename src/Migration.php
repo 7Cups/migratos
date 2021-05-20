@@ -3,6 +3,9 @@ namespace SevenCupsMigratos;
 
 
 class Migration{
+    const DIRECTION_UP='u';
+    const DIRECTION_DOWN='d';
+
     /**
      * @var \PDO
      */
@@ -50,23 +53,35 @@ class Migration{
     public function getBaseMigrationVersion():string{
         return $this->base_migration_version;
     }
+    public function purgeDatabase():bool {
+        if(method_exists($this->getDatabase(),'purgeDatabase')) {
+            $this->getDatabase()->purgeDatabase();
+            return true;
+        }
 
+        throw new \Exception('Your database object is not support purgeDatabase method');
+        return true;
+    }
     public function init() {
-        $base_migration = $this->getMigration($this->getBaseMigrationVersion(),'');
-        return $this->runMigration($base_migration);
+        $base_migration = $this->getMigration($this->getBaseMigrationVersion());
+        return $this->runMigration($base_migration,'base');
     }
 
-    public function runMigration(string $migration) {
+    public function runMigration(string $migration,string $version) {
         $migrate = $this->getDatabase()->prepare($migration);
         $migrate->execute();
+
+        $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '$version')");
         return true;
     }
 
 
-    public function getMigration(string $migration,string $direction='u_'):?string {
-        $filepath = $this->getMigrationFolder().
-            DIRECTORY_SEPARATOR.
-            $direction.$migration.'.sql';
+    public function getMigration(string $migration,string $direction=null):?string {
+        $filename = $migration.'.sql';
+        if($direction) $filename = $direction . '_' . $filename;
+
+        $filepath = $this->getMigrationFolder().DIRECTORY_SEPARATOR.$filename;
+
         if(!file_exists($filepath)) throw new \Exception('Migration file not found! File path:'.$filepath);
 
         $content = file_get_contents($filepath);
@@ -75,18 +90,19 @@ class Migration{
     }
 
     public function investigateExistingMigrations():?array{
-        $files = ['u'=>[], 'd'=>[]];
+        $files = [self::DIRECTION_UP=>[], self::DIRECTION_DOWN=>[]];
 
         foreach(glob($this->getMigrationFolder().DIRECTORY_SEPARATOR.'[ud]_*.sql') as $file) {
             $file = str_replace([$this->getMigrationFolder(),DIRECTORY_SEPARATOR,'.sql'],'',$file);
             list($direction,$version) = explode('_',$file);
+
             $files[$direction][$version]=$version;
         }
 
         return $files;
     }
 
-    private function validateSchema():bool {
+    public function validateSchema():bool {
         $query = $this->database->prepare("show tables like ?"); 
         $query->execute([self::VERSION_TABLE_NAME]);
         $result = $query->fetchColumn();
@@ -109,7 +125,8 @@ class Migration{
         $existingMigrations = $this->investigateExistingMigrations();
 
         foreach($runnedMigrations as $runnedVersion) {
-            unset($existingMigrations[$runnedVersion]);
+            unset($existingMigrations[self::DIRECTION_UP][$runnedVersion['version']]);
+            unset($existingMigrations[self::DIRECTION_DOWN][$runnedVersion['version']]);
         }
 
         return $existingMigrations;
@@ -119,19 +136,49 @@ class Migration{
         $tablename = self::VERSION_TABLE_NAME;
         $sql = <<<SQL
 CREATE TABLE $tablename (
+    id int(11) NOT NULL AUTO_INCREMENT, 
     version varchar(25),
     run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     filename varchar(255),
-    PRIMARY KEY (version)
+    PRIMARY KEY (id)
 )
 SQL;
         return $sql;
     }
 
-    public function writeBaseFile(string $content):bool {
-        $filepath = $this->getMigrationFolder().DIRECTORY_SEPARATOR.$this->getBaseMigrationVersion().'.sql';
+    public function generateUpTemplate(string $ts): string {
+        $template = <<<SQL
+/*
+--Version $ts
+--add your up queries to this file
+----------------------------------
+*/
+
+SQL;
+        return $template; 
+    }
+    public function generateDownTemplate(string $ts): string {
+        $template = <<<SQL
+/*
+--Version $ts
+--add your down queries to this file
+------------------------------------
+*/
+
+SQL;
+        return $template; 
+    }
+
+
+    public function writeMigrationFile(string $version, string $content,string $direction = null):bool {
+        $filename = $version.'.sql';
+        if($direction) $filename = $direction.'_'.$filename;
+
+        $filepath = $this->getMigrationFolder().DIRECTORY_SEPARATOR.$filename;
         return boolval(file_put_contents($filepath,$content));
     }
+
+
 
     public function transactionStart():bool{
         return $this->database->beginTransaction();
