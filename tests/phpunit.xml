@@ -1,0 +1,17 @@
+<phpunit 
+    bootstrap="bootstrap.php"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    stderr="true">
+     <php>
+        <ini name="display_errors" value="on" />
+        <ini name="error_reporting" value="E_ALL" />
+     </php>
+    <testsuites>
+       <testsuite name="src">
+           <directory>./</directory>
+        </testsuite> 
+    </testsuites>
+</phpunit>
+

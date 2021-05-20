@@ -3,6 +3,11 @@
     "description": "Basic database migration library",
     "type": "library",
     "license": "MIT",
+    "config": {
+        "platform": {
+            "php": "7.3"
+        }
+    },
     "authors": [
         {
             "name": "Emre YILMAZ",
@@ -22,5 +27,8 @@
     },
     "require": {
         "symfony/console":"^5.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
     }
 }
