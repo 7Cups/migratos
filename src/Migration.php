@@ -68,8 +68,7 @@ class Migration{
     }
 
     public function runMigration(string $migration,string $version) {
-        $migrate = $this->getDatabase()->prepare($migration);
-        $migrate->execute();
+        $this->getDatabase()->query($migration);
 
         $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '$version')");
         return true;
