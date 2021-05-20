@@ -54,12 +54,10 @@ class Migration{
         return $this->base_migration_version;
     }
     public function purgeDatabase():bool {
-        if(method_exists($this->getDatabase(),'purgeDatabase')) {
-            $this->getDatabase()->purgeDatabase();
-            return true;
-        }
-
-        throw new \Exception('Your database object is not support purgeDatabase method');
+        $tables = $this->getDatabase()->query('show tables')->fetchAll();
+        $tables = array_map(function($table){return $table[0];},$tables);
+        $query = 'SET foreign_key_checks = 0;DROP TABLE IF EXISTS '.join(',',$tables).' CASCADE;SET foreign_key_checks = 1';
+        $this->getDatabase()->query($query);
         return true;
     }
     public function init() {

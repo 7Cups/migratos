@@ -76,7 +76,7 @@ class MigrationCommand extends Command {
         $output->warning('BE CAREFUL! IT WILL PURGE DATABASE!');
         $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',false);
         if(!$confirm)return self::FAILURE;
-        //$this->service->purgeDatabase();
+        $this->service->purgeDatabase();
 
         $this->service->init();
         $output->newLine();
