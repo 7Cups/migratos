@@ -40,7 +40,6 @@ class MigrationCommand extends Command {
 
         $io = new SymfonyStyle($input, $output);
 
-        $this->service->transactionStart();
 
         if($rollback) return $this->runRollbackMigration($rollback,$io,$interactive);
 
@@ -58,6 +57,8 @@ class MigrationCommand extends Command {
     }
 
     private function runRollbackMigration($rollbackTimestamp,SymfonyStyle $output,bool $interactive = true):int {
+        $this->service->transactionStart();
+
         $migrations = $this->service->findMigrationsSince($rollbackTimestamp);
         foreach($migrations as $version) {
             $migration = $this->service->getMigration($version['version'], Migration::DIRECTION_DOWN);
@@ -72,6 +73,9 @@ class MigrationCommand extends Command {
             $output->text("$rollbackTimestamp migrated!");
             $output->newLine();
         }
+
+        $this->service->transactionCommit();
+
         return Command::SUCCESS; 
     }
 
@@ -80,6 +84,7 @@ class MigrationCommand extends Command {
         $output->warning('BE CAREFUL! IT WILL PURGE DATABASE!');
         $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',false);
         if(!$confirm)return self::FAILURE;
+        $this->service->transactionStart();
         $this->service->purgeDatabase();
 
         $this->service->init();
@@ -87,10 +92,15 @@ class MigrationCommand extends Command {
         $output->text('Initial migration ran');
         $output->newLine();
 
+
+        $this->service->transactionCommit();
+
         return $this->runUpMigrations($output);
     }
 
     private function runUpMigrations(SymfonyStyle $output,bool $interactive = true) :int {
+        $this->service->transactionStart();
+
         $new_migrations = $this->service->findNewMigrations();
         $up_migrations = $new_migrations['u'];
 
@@ -103,6 +113,7 @@ class MigrationCommand extends Command {
 
         if($interactive) {
             $continue = $output->confirm("Are you sure to continue?");
+
             if(!$continue) return self::FAILURE;
         }
 
