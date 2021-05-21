@@ -14,12 +14,13 @@ class Migration{
     private $migration_folder='migration';
 
     /** @var string */
-    private $base_migration_version='base';
+    private $base_migration_version='0000000000';
 
     const VERSION_TABLE_NAME='migratos_migration_versions';
 
 
     public function __construct(\PDO $database=null) {
+        $database->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
        $this->setDatabase($database); 
     }
 
@@ -62,15 +63,21 @@ class Migration{
     }
     public function init() {
         $base_migration = $this->getMigration($this->getBaseMigrationVersion());
-        return $this->runMigration($base_migration,'base');
+        return $this->runMigration($base_migration,$this->getBaseMigrationVersion());
     }
 
-    public function runMigration(string $migration,string $version) {
+    public function runMigration(string $migration,string $version,string $direction=self::DIRECTION_UP) {
         $this->getDatabase()->query($migration);
-
-        $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '$version')");
+        $currentVersion = $version;
+        if($direction == self::DIRECTION_DOWN) {
+            $rs = $this->getDatabase()->query('SELECT version FROM '.self::VERSION_TABLE_NAME." WHERE direction='".self::DIRECTION_UP."' AND version < $version ORDER BY version desc LIMIT 1")->fetchColumn();
+            $currentVersion = $rs;
+        }
+        $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '', '$direction',$currentVersion)");
         return true;
     }
+
+    public function runRollbackMigration(string $migration) {}
 
 
     public function getMigration(string $migration,string $direction=null):?string {
@@ -111,7 +118,8 @@ class Migration{
 
     public function findRunnedMigrations():?array{
         $this->validateSchema();
-        $query = $this->database->prepare("SELECT version FROM ".self::VERSION_TABLE_NAME);
+        $currentVersion = $this->getDatabase()->query('SELECT current_version FROM '.self::VERSION_TABLE_NAME." order by id desc LIMIT 1")->fetchColumn();
+        $query = $this->database->prepare("SELECT version FROM ".self::VERSION_TABLE_NAME. " WHERE version<=$currentVersion");
         $query->execute();
         $result = $query->fetchAll();
         return $result;
@@ -129,14 +137,20 @@ class Migration{
         return $existingMigrations;
     }
 
+    public function findMigrationsSince(string $version):?array {
+        $query = $this->getDatabase()->query('SELECT DISTINCT version FROM '.self::VERSION_TABLE_NAME." WHERE direction='".self::DIRECTION_UP."' AND version >= $version ORDER BY version desc ");
+        return $query->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     public function generateBase(): string {
         $tablename = self::VERSION_TABLE_NAME;
         $sql = <<<SQL
 CREATE TABLE $tablename (
     id int(11) NOT NULL AUTO_INCREMENT, 
-    version varchar(25),
+    version int(11),
     run_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    filename varchar(255),
+    direction ENUM('u','d'),
+    current_version varchar(255),
     PRIMARY KEY (id)
 )
 SQL;
@@ -154,6 +168,7 @@ SQL;
 SQL;
         return $template; 
     }
+
     public function generateDownTemplate(string $ts): string {
         $template = <<<SQL
 /*
@@ -166,7 +181,6 @@ SQL;
         return $template; 
     }
 
-
     public function writeMigrationFile(string $version, string $content,string $direction = null):bool {
         $filename = $version.'.sql';
         if($direction) $filename = $direction.'_'.$filename;
@@ -174,8 +188,6 @@ SQL;
         $filepath = $this->getMigrationFolder().DIRECTORY_SEPARATOR.$filename;
         return boolval(file_put_contents($filepath,$content));
     }
-
-
 
     public function transactionStart():bool{
         return $this->database->beginTransaction();

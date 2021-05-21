@@ -58,23 +58,27 @@ class MigrationCommand extends Command {
     }
 
     private function runRollbackMigration($rollbackTimestamp,SymfonyStyle $output,bool $interactive = true):int {
-        $migration = $this->service->getMigration($rollbackTimestamp,Migration::DIRECTION_DOWN);
-        $output->text($migration);
+        $migrations = $this->service->findMigrationsSince($rollbackTimestamp);
+        foreach($migrations as $version) {
+            $migration = $this->service->getMigration($version['version'], Migration::DIRECTION_DOWN);
+            $output->text($migration);
 
-        if($interactive) {
+            if($interactive) {
                 $approve = $output->confirm('Do you approve to run printed sql on database?',true);
                 if(!$approve) return self::FAILURE;
+            }
+
+            $this->service->runMigration($migration,$version['version'], Migration::DIRECTION_DOWN);
+            $output->text("$rollbackTimestamp migrated!");
+            $output->newLine();
         }
-        $this->service->runMigration($migration,$rollbackTimestamp);
-        $output->text("$rollbackTimestamp migrated!");
-        $output->newLine();
         return Command::SUCCESS; 
     }
 
     private function runInitialMigration(SymfonyStyle $output,bool $interactive = true):int {
         $output->warning('THERE IS NO WAY TO RUN INIT COMMAND IN QUITE MODE!');
         $output->warning('BE CAREFUL! IT WILL PURGE DATABASE!');
-        $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',false);
+        $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',true);
         if(!$confirm)return self::FAILURE;
         $this->service->purgeDatabase();
 
@@ -135,7 +139,7 @@ class MigrationCommand extends Command {
 
     private function generateBase(SymfonyStyle $output,bool $interactive = true): int {
         $content = $this->service->generateBase();
-        $output->title("Base.sql");
+        $output->title("Base Version");
         $output->text($content);
 
         if($interactive){
