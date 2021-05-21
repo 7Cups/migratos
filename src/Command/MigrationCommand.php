@@ -78,7 +78,7 @@ class MigrationCommand extends Command {
     private function runInitialMigration(SymfonyStyle $output,bool $interactive = true):int {
         $output->warning('THERE IS NO WAY TO RUN INIT COMMAND IN QUITE MODE!');
         $output->warning('BE CAREFUL! IT WILL PURGE DATABASE!');
-        $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',true);
+        $confirm = $output->confirm('This process will purge all database and will run base script then will run all up scripts. Are you sure to continue? It cannot be reverse and will cause data lose!',false);
         if(!$confirm)return self::FAILURE;
         $this->service->purgeDatabase();
 
