@@ -68,6 +68,11 @@ class Migration{
 
     public function runMigration(string $migration,string $version,string $direction=self::DIRECTION_UP) {
         $this->getDatabase()->query($migration);
+        if($version == $this->getBaseMigrationVersion()) {
+            $this->transactionCommit(); 
+            syslog(LOG_INFO,'Base transaction committed!');
+            $this->transactionStart();
+        }
         $currentVersion = $version;
         if($direction == self::DIRECTION_DOWN) {
             $rs = $this->getDatabase()->query('SELECT version FROM '.self::VERSION_TABLE_NAME." WHERE direction='".self::DIRECTION_UP."' AND version < $version ORDER BY version desc LIMIT 1")->fetchColumn();
