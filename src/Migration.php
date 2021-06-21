@@ -78,7 +78,7 @@ class Migration{
             $rs = $this->getDatabase()->query('SELECT version FROM '.self::VERSION_TABLE_NAME." WHERE direction='".self::DIRECTION_UP."' AND version < $version ORDER BY version desc LIMIT 1")->fetchColumn();
             $currentVersion = $rs;
         }
-        $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '', '$direction',$currentVersion)");
+        $this->getDatabase()->query("INSERT INTO ".self::VERSION_TABLE_NAME." VALUES(null,'$version',CURRENT_TIMESTAMP(), '$direction',$currentVersion)");
         return true;
     }
 
