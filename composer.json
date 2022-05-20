@@ -3,9 +3,10 @@
     "description": "Basic database migration library",
     "type": "library",
     "license": "MIT",
+    "version":"0.0.5",
     "config": {
         "platform": {
-            "php": "7.3"
+            "php": "8.0"
         }
     },
     "authors": [
