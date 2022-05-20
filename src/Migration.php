@@ -195,10 +195,16 @@ SQL;
     }
 
     public function transactionStart():bool{
-        return $this->database->beginTransaction();
+        if($this->database->inTransaction()){
+            return $this->database->beginTransaction();
+        }
+        return true;
     }
 
     public function transactionCommit():bool{
-        return $this->database->commit();
+        if($this->database->inTransaction){
+            return $this->database->commit();
+        }
+        return false;
     }
 }
