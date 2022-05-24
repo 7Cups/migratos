@@ -202,7 +202,7 @@ SQL;
     }
 
     public function transactionCommit():bool{
-        if($this->database->inTransaction){
+        if($this->database->inTransaction()){
             return $this->database->commit();
         }
         return false;
