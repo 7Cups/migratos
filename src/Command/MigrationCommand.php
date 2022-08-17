@@ -145,6 +145,8 @@ class MigrationCommand extends Command {
         $this->service->writeMigrationFile($ts,$down_migration_template,Migration::DIRECTION_DOWN);
 
         $output->success('Up and Down scripts added to '.$this->service->getMigrationFolder().' folder. You can edit.');
+        $output->success('Up File: '.Migration::DIRECTION_UP.'_'.$ts.'.sql');
+        $output->success('Down File: '.Migration::DIRECTION_DOWN.'_'.$ts.'.sql');
         return self::SUCCESS;
     }
 
