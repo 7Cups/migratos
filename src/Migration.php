@@ -157,7 +157,11 @@ CREATE TABLE $tablename (
     direction ENUM('u','d'),
     current_version varchar(255),
     PRIMARY KEY (id)
-)
+);
+/*
+--add your base queries after this comment
+------------------------------------
+*/
 SQL;
         return $sql;
     }
