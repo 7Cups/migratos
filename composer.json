@@ -3,10 +3,10 @@
     "description": "Basic database migration library",
     "type": "library",
     "license": "MIT",
-    "version":"0.0.51",
+    "version":"0.0.52",
     "config": {
         "platform": {
-            "php": "8.0"
+            "php": "8.4"
         }
     },
     "authors": [
@@ -27,6 +27,8 @@
         }
     },
     "require": {
+        "php": ">=8.4",
+        "ext-pdo_mysql": "*",
         "symfony/console":"^5.0"
     },
     "require-dev": {

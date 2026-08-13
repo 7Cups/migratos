@@ -19,8 +19,8 @@ class Migration{
     const VERSION_TABLE_NAME='migratos_migration_versions';
 
 
-    public function __construct(\PDO $database=null) {
-        $database->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,true);
+    public function __construct(?\PDO $database=null) {
+        $database->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY,true);
        $this->setDatabase($database); 
     }
 
@@ -85,7 +85,7 @@ class Migration{
     public function runRollbackMigration(string $migration) {}
 
 
-    public function getMigration(string $migration,string $direction=null):?string {
+    public function getMigration(string $migration,?string $direction=null):?string {
         $filename = $migration.'.sql';
         if($direction) $filename = $direction . '_' . $filename;
 
@@ -190,7 +190,7 @@ SQL;
         return $template; 
     }
 
-    public function writeMigrationFile(string $version, string $content,string $direction = null):bool {
+    public function writeMigrationFile(string $version, string $content,?string $direction = null):bool {
         $filename = $version.'.sql';
         if($direction) $filename = $direction.'_'.$filename;
 
